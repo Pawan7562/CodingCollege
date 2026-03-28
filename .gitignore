@@ -2,6 +2,7 @@
 node_modules/
 */node_modules/
 
+<<<<<<< HEAD
 # Production builds
 /backend/dist/
 /frontend/build/
@@ -112,3 +113,25 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+=======
+# Environment variables (keep secrets safe)
+.env
+backend/.env
+frontend/.env
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+>>>>>>> efb84c1ad6217944445d6b2bf48b8ad3d0887842

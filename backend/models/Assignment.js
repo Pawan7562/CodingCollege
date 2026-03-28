@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const assignmentSchema = new mongoose.Schema({
+<<<<<<< HEAD
   title: {
     type: String,
     required: [true, 'Please add an assignment title'],
@@ -117,5 +118,23 @@ assignmentSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
+=======
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
+  dueDate: Date,
+  maxMarks: { type: Number, default: 100 },
+  submissions: [{
+    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    answer: String,
+    fileUrl: String,
+    submittedAt: { type: Date, default: Date.now },
+    marks: Number,
+    feedback: String,
+    status: { type: String, enum: ['submitted', 'graded'], default: 'submitted' },
+  }],
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true });
+>>>>>>> efb84c1ad6217944445d6b2bf48b8ad3d0887842
 
 module.exports = mongoose.model('Assignment', assignmentSchema);
