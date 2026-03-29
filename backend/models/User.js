@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-<<<<<<< HEAD
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
@@ -50,23 +49,28 @@ const userSchema = new mongoose.Schema({
     github: String
   },
   enrolledCourses: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.ObjectId,
     ref: 'Course'
   }],
   createdCourses: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.ObjectId,
     ref: 'Course'
   }],
   wishlist: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.ObjectId,
     ref: 'Course'
   }],
-  cart: [{
+  progress: [{
     course: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.ObjectId,
       ref: 'Course'
     },
-    addedAt: {
+    completedLessons: [Number],
+    percentage: {
+      type: Number,
+      default: 0
+    },
+    lastAccessed: {
       type: Date,
       default: Date.now
     }
@@ -101,35 +105,9 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   banReason: String,
-  preferences: {
-    notifications: {
-      email: {
-        type: Boolean,
-        default: true
-      },
-      push: {
-        type: Boolean,
-        default: true
-      }
-    },
-    language: {
-      type: String,
-      default: 'en'
-    }
-  },
-  subscription: {
-    type: {
-      type: String,
-      enum: ['free', 'premium', 'pro'],
-      default: 'free'
-    },
-    startDate: Date,
-    endDate: Date,
-    status: {
-      type: String,
-      enum: ['active', 'cancelled', 'expired'],
-      default: 'active'
-    }
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
@@ -137,38 +115,33 @@ const userSchema = new mongoose.Schema({
 
 // Encrypt password using bcrypt
 userSchema.pre('save', async function(next) {
-  // Only run this function if password was actually modified
   if (!this.isModified('password')) {
     next();
   }
-
-  // Hash password with cost of 12
-  const salt = await bcrypt.genSalt(12);
+  const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
-// Sign JWT and return
+// Match user entered password to hashed password in database
+userSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate JWT access token
 userSchema.methods.getSignedJwtToken = function() {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
 
-// Generate refresh token
+// Generate JWT refresh token
 userSchema.methods.getRefreshToken = function() {
   const refreshToken = jwt.sign({ id: this._id }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRE,
   });
   
-  // Add refresh token to user's refreshTokens array
   this.refreshTokens.push({ token: refreshToken });
   return refreshToken;
-};
-
-// Add refresh token
-userSchema.methods.addRefreshToken = function(token) {
-  this.refreshTokens.push({ token });
 };
 
 // Remove refresh token
@@ -184,14 +157,11 @@ userSchema.methods.clearRefreshTokens = function() {
 // Generate email verification token
 userSchema.methods.getEmailVerificationToken = function() {
   const verificationToken = crypto.randomBytes(20).toString('hex');
-  
   this.emailVerificationToken = crypto
     .createHash('sha256')
     .update(verificationToken)
     .digest('hex');
-  
-  this.emailVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-  
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
   return verificationToken;
 };
 
@@ -199,16 +169,6 @@ userSchema.methods.getEmailVerificationToken = function() {
 userSchema.methods.updateLastLogin = function() {
   this.lastLogin = new Date();
   this.loginCount += 1;
-};
-
-// Check if user is enrolled in course
-userSchema.methods.isEnrolledInCourse = function(courseId) {
-  return this.enrolledCourses.some(course => course.toString() === courseId.toString());
-};
-
-// Check if user is course creator
-userSchema.methods.isCourseCreator = function(courseId) {
-  return this.createdCourses.some(course => course.toString() === courseId.toString());
 };
 
 // Get user stats
@@ -236,90 +196,10 @@ userSchema.methods.getResetPasswordToken = function() {
   return resetToken;
 };
 
-// Match user entered password to hashed password in database
-userSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
-
 // Cascade delete courses when user is deleted
 userSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
   await this.constructor.model('Course').deleteMany({ instructor: this._id });
   next();
 });
 
-// Indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ role: 1 });
-userSchema.index({ 'refreshTokens.token': 1 });
-userSchema.index({ createdAt: -1 });
-
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
-=======
-
-const userSchema = new mongoose.Schema({
-  name:     { type: String, required: true, trim: true },
-  email:    { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, minlength: 6, default: '' },
-  role:     { type: String, enum: ['student', 'teacher', 'admin'], default: 'student' },
-  avatar:   { type: String, default: '' },
-  bio:      { type: String, default: '' },
-  phone:    { type: String, default: '' },
-
-  // OAuth
-  googleId:     { type: String, default: '' },
-  githubId:     { type: String, default: '' },
-  authProvider: { type: String, enum: ['local', 'google', 'github'], default: 'local' },
-
-  // Email verification
-  isEmailVerified:   { type: Boolean, default: false },
-  emailOTP:          { type: String, default: '' },
-  emailOTPExpire:    { type: Date },
-
-  // Phone verification
-  isPhoneVerified: { type: Boolean, default: false },
-  phoneOTP:        { type: String, default: '' },
-  phoneOTPExpire:  { type: Date },
-
-  // ── Teacher application ─────────────────────────────────────────────
-  teacherApplication: {
-    status:     { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none' },
-    expertise:  { type: String, default: '' },
-    experience: { type: String, default: '' },
-    linkedin:   { type: String, default: '' },
-    github:     { type: String, default: '' },
-    youtube:    { type: String, default: '' },
-    website:    { type: String, default: '' },
-    whyTeach:   { type: String, default: '' },
-    appliedAt:  { type: Date },
-    reviewedAt: { type: Date },
-    rejectionReason: { type: String, default: '' },
-  },
-
-  // Enrolled / cart / wishlist
-  enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-  wishlist:        [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-  cart:            [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-  notifications: [{
-    message:   String,
-    read:      { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now },
-  }],
-  resetPasswordToken:  String,
-  resetPasswordExpire: Date,
-}, { timestamps: true });
-
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password') || !this.password) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
-
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  if (!this.password) return false;
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-
 module.exports = mongoose.model('User', userSchema);
->>>>>>> efb84c1ad6217944445d6b2bf48b8ad3d0887842

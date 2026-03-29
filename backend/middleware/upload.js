@@ -1,127 +1,29 @@
 const multer = require('multer');
-<<<<<<< HEAD
-const path = require('path');
 
-// Set storage engine
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    let uploadPath = 'uploads/';
-    
-    // Different folders for different file types
-    if (file.mimetype.startsWith('image/')) {
-      uploadPath += 'images/';
-    } else if (file.mimetype.startsWith('video/')) {
-      uploadPath += 'videos/';
-    } else if (file.mimetype === 'application/pdf') {
-      uploadPath += 'pdfs/';
-    } else {
-      uploadPath += 'documents/';
-    }
-    
-    cb(null, uploadPath);
+  destination: function(req, file, cb) {
+    cb(null, 'uploads/');
   },
-  filename: function (req, file, cb) {
-    // Create unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  filename: function(req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
   }
 });
 
-// Check file type
 const fileFilter = (req, file, cb) => {
-  // Allowed file types
-  const allowedTypes = /jpeg|jpg|png|gif|mp4|avi|mov|wmv|pdf|doc|docx|txt|zip|rar/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
+  // Accept images and videos
+  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only images, videos, PDFs, and documents are allowed.'));
+    cb(new Error('Only image and video files are allowed'), false);
   }
 };
 
-// Initialize upload
 const upload = multer({
   storage: storage,
+  fileFilter: fileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB max file size
-  },
-  fileFilter: fileFilter
+    fileSize: 100 * 1024 * 1024 // 100MB
+  }
 });
 
-// Single file upload
-const uploadSingle = (fieldName) => upload.single(fieldName);
-
-// Multiple files upload
-const uploadMultiple = (fieldName, maxCount = 5) => upload.array(fieldName, maxCount);
-
-// Create upload directories
-const createUploadDirectories = () => {
-  const fs = require('fs');
-  const dirs = ['uploads/images', 'uploads/videos', 'uploads/pdfs', 'uploads/documents'];
-  
-  dirs.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  });
-};
-
-module.exports = {
-  uploadSingle,
-  uploadMultiple,
-  createUploadDirectories
-};
-=======
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('cloudinary').v2;
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-const imageStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'college/thumbnails',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 800, height: 450, crop: 'fill' }]
-  },
-});
-
-const videoStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'college/videos',
-    resource_type: 'video',
-    allowed_formats: ['mp4', 'mov', 'avi', 'mkv']
-  },
-});
-
-const pdfStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'college/pdfs',
-    resource_type: 'raw',
-    allowed_formats: ['pdf']
-  },
-});
-
-const avatarStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'college/avatars',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 200, height: 200, crop: 'fill' }]
-  },
-});
-
-exports.uploadThumbnail = multer({ storage: imageStorage });
-exports.uploadVideo = multer({ storage: videoStorage });
-exports.uploadPDF = multer({ storage: pdfStorage });
-exports.uploadAvatar = multer({ storage: avatarStorage });
-exports.cloudinary = cloudinary;
->>>>>>> efb84c1ad6217944445d6b2bf48b8ad3d0887842
+module.exports = upload;

@@ -1,140 +1,39 @@
 const mongoose = require('mongoose');
 
 const assignmentSchema = new mongoose.Schema({
-<<<<<<< HEAD
   title: {
     type: String,
-    required: [true, 'Please add an assignment title'],
-    trim: true,
-    maxlength: [100, 'Title cannot be more than 100 characters']
+    required: true
   },
-  description: {
-    type: String,
-    required: [true, 'Please add an assignment description'],
-    maxlength: [2000, 'Description cannot be more than 2000 characters']
-  },
+  description: String,
   course: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.ObjectId,
     ref: 'Course',
     required: true
   },
-  instructions: {
-    type: String,
-    required: [true, 'Please add assignment instructions']
-  },
-  attachments: [{
-    name: String,
-    url: String,
-    type: {
-      type: String,
-      enum: ['pdf', 'image', 'video', 'document', 'other'],
-      default: 'document'
-    }
-  }],
-  maxScore: {
-    type: Number,
-    required: [true, 'Please add maximum score'],
-    min: [1, 'Maximum score must be at least 1']
-  },
-  dueDate: {
-    type: Date,
-    required: [true, 'Please add a due date']
-  },
-  submissionType: {
-    type: String,
-    enum: ['file', 'text', 'link', 'code'],
+  instructor: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
     required: true
   },
-  allowedFileTypes: [{
-    type: String
-  }],
-  maxFileSize: {
-    type: Number, // in MB
-    default: 10
-  },
+  dueDate: Date,
   submissions: [{
     student: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+      type: mongoose.Schema.ObjectId,
+      ref: 'User'
     },
+    content: String,
     submittedAt: {
       type: Date,
       default: Date.now
     },
-    isLate: {
-      type: Boolean,
-      default: false
-    },
-    content: {
-      text: String,
-      link: String,
-      code: String,
-      files: [{
-        name: String,
-        url: String,
-        size: String
-      }]
-    },
-    score: {
-      type: Number,
-      min: 0
-    },
-    feedback: {
-      type: String,
-      maxlength: [1000, 'Feedback cannot be more than 1000 characters']
-    },
-    gradedAt: Date,
-    gradedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    status: {
-      type: String,
-      enum: ['submitted', 'graded', 'returned'],
-      default: 'submitted'
-    }
+    grade: Number,
+    feedback: String
   }],
-  isPublished: {
-    type: Boolean,
-    default: false
-  },
-  order: {
-    type: Number,
-    default: 0
-  },
   createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
     type: Date,
     default: Date.now
   }
 });
-
-// Update the updatedAt field on save
-assignmentSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-=======
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
-  dueDate: Date,
-  maxMarks: { type: Number, default: 100 },
-  submissions: [{
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    answer: String,
-    fileUrl: String,
-    submittedAt: { type: Date, default: Date.now },
-    marks: Number,
-    feedback: String,
-    status: { type: String, enum: ['submitted', 'graded'], default: 'submitted' },
-  }],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-}, { timestamps: true });
->>>>>>> efb84c1ad6217944445d6b2bf48b8ad3d0887842
 
 module.exports = mongoose.model('Assignment', assignmentSchema);
